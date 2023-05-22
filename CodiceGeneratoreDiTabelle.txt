@@ -1,0 +1,811 @@
+Table table;
+String prePath = "TablesVX/";
+String prePath2 = "TablesSenzaApostrofiVX/";
+boolean SAVING = true;
+
+
+int NUMDIPE = 720;
+int NUMLAV = 1160;
+int NUMPROG = 162;
+int NUMUFF = 36;
+String[] dipartimenti = {"Produzione",      "Testing",       "Logistica", 
+                         "Amministrazione", "Commercio",     "Relazioni pubbliche", 
+                         "Legale",          "Risorse umane", "Ricerca e sviluppo"};
+int[] personePerDipartimenti = {327, 76, 92, 58, 54, 23, 27, 31, 32}; // Totale -> 720
+int[] progettiPerDipartimenti = {41, 29, 27, 20, 16, 11, 7, 5, 6}; // Totale -> 162
+int[] budgetPerDipartimenti = {12140000, 650000, 2340000, 220000, 1340000, 360000, 210000, 190000, 1820000};
+int[] budgetRimPerDipartimenti = {1420000, 130000, 230000, 10000, 80000, 110000, 40000, 30000, 70000};
+int[] ufficiPerDipartimenti = {9, 4, 3, 5, 4, 3, 4, 2, 2}; // Totale -> 36
+int[] pianiPerDipartimenti = {1, 2, 2, 5, 4, 5, 5, 3, 2}; // Gli uffici si trovano tra i piani PIANO e PIANO-1
+String[][] tabellaLavoriPerDipartimenti = {{"Operaio", "Addetto ai macchinari", "Manutentore","Programmatore", "Ingegnere"},
+                                           {"Operaio", "Tecnico", "Supervisore", "Specialista"},
+                                           {"Magazziniere", "Autista", "Direttore logistica"},
+                                           {"Supervisore", "Manager", "Amministratore", "Gestore", "Direttore"},
+                                           {"Consulente", "Ragioniere", "Analista", "Commercialista"},
+                                           {"Mediatore", "Organizzatore", "Rappresentante"},
+                                           {"Segretario", "Consulente avvocato", "Avvocato"},
+                                           {"Segretario", "Supervisore", "Amministratore del personale"},
+                                           {"Ricercatore", "Analista", "Ingegnere ricercatore"}};         
+                                           
+                                           
+int[][] stipendiTipoTabellaLavori = {{1650, 1700, 2000, 2200, 2900},  1650  3500
+                                     {1200, 1300, 1500, 1600},
+                                     {1300, 1500, 1800},
+                                     {1500, 1600, 1700, 2000, 2400},
+                                     {1400, 1500, 1600, 1850},
+                                     {1600, 1700, 1900},
+                                     {1500, 1750, 1900},
+                                     {1500, 1550, 1600},
+                                     {1500, 1600, 1900}};
+
+
+String[] respPerDipartimenti = {"", "", "", "1", "", "", "", "", ""};
+
+
+void setup() {
+  size(600,400);
+  // Assert numero dipendenti
+  int totaleDipendenti = 0;
+  for (int i = 0; i < personePerDipartimenti.length; ++i) {
+    totaleDipendenti += personePerDipartimenti[i];
+  }
+  println("Assert dipendenti:", totaleDipendenti, NUMDIPE == totaleDipendenti);
+  // Assert numero uffici
+  int totaleUffici = 0;
+  for (int i = 0; i < ufficiPerDipartimenti.length; ++i) {
+    totaleUffici += ufficiPerDipartimenti[i];
+  }
+  println("Assert uffici:", totaleUffici, NUMUFF == totaleUffici);
+  // Assert numero progetti
+  int totaleProgetti = 0;
+  for (int i = 0; i < progettiPerDipartimenti.length; ++i) {
+    totaleProgetti += progettiPerDipartimenti[i];
+  }
+  println("Assert progetti:", totaleProgetti, NUMPROG == totaleProgetti);
+  
+  
+  // Create name pairs
+  String[] nomi = loadStrings("Nomi.txt");
+  String[] cognomi = loadStrings("Cognomi.txt");
+  String[][] dipendenti = new String[totaleDipendenti][9];                         // Nome, Cognome, ID, Telefono, numero cambio posizioni, dipa, lavoro, proge, ufficio
+  StringList existingDipendenti = new StringList();
+  int countDipendenti = 0;
+  
+  while(countDipendenti < 720) {
+    // Pick random name and surname (158) - (623)
+    String _nome = nomi[floor(random(nomi.length))];
+    String _cognome = cognomi[floor(random(cognomi.length))];
+    String _nomecompleto = _nome + " " + _cognome;
+    if (!existingDipendenti.hasValue(_nomecompleto)) {
+      dipendenti[countDipendenti][0] = _nome;
+      dipendenti[countDipendenti][1] = _cognome;
+      existingDipendenti.append(_nomecompleto);
+      countDipendenti++;
+    }
+  }
+  
+  // Conto dei nomi    Was before while(countDipe)
+  //println("Totale nomi", nomi.length);
+  /*int countMas = 0;
+  int countFem = 0;
+  int countNul = 0;
+  for (int i = 0; i < nomi.length; ++i) {
+    if (nomi[i].charAt(nomi[i].length()-1) == 'o') {
+      countMas++;
+    } else if (nomi[i].charAt(nomi[i].length()-1) == 'a') {
+      countFem++;
+    } else {
+      countNul++;
+    }
+  }
+  println("Conto nomi per M,F,U", countMas, countFem, countNul);*/
+  
+  //existingDipendenti.print();
+  // Creat lista ID per dipendenti
+  int[] listaIDDipendenti = new int[dipendenti.length];
+  for (int i = 0; i < dipendenti.length; ++i) {
+    listaIDDipendenti[i] = i + 1;
+  }
+  // Aggiungi saltini
+  int saltiniDipendenti = 96;
+  for (int i = 0; i < saltiniDipendenti; ++i) { // 1.59  -0.9  0.28  3/720 - 1.25 -0.37 0.11  3/720
+    float x = random(1.0);
+    int saltino = floor( (float)dipendenti.length * (1.25*pow(x, 3) - 0.37*pow(x, 2) + 0.11*x + (float)2.0/dipendenti.length) );
+    for (int j = saltino; j < dipendenti.length; ++j) {
+      listaIDDipendenti[j]++;
+    }
+  }
+  //printArray(listaIDDipendenti);
+  // Aggiungi IDs a dipendenti e numero cambio posizioni a 0
+  for (int i = 0; i < dipendenti.length; ++i) {
+    dipendenti[i][2] = str(listaIDDipendenti[i]);
+    dipendenti[i][4] = "0";
+    dipendenti[i][6] = "";
+    dipendenti[i][7] = "";
+    dipendenti[i][8] = "";
+  }
+  /*String IDS = "";
+  for (int i = 1; i < dipendenti.length; ++i) {
+    IDS += listaIDDipendenti[i] - listaIDDipendenti[i - 1] - 1;
+  }
+  println(IDS);*/
+  
+  // Crea lista telefoni
+  StringList listaPhones = new StringList();
+  int countTelefoni = 0;
+  while(countTelefoni < dipendenti.length) {
+    String _phone = "3";
+    _phone += str(floor(random(72) + 16));
+    for (int j = 0; j < 7; ++j) {
+      _phone += str(floor(random(10)));
+    }
+    if (!listaPhones.hasValue(_phone)) {
+      // Aggiungi telefoni a dipendenti
+      dipendenti[countTelefoni][3] = _phone;
+      listaPhones.append(_phone);
+      countTelefoni++;
+    }
+  }
+  
+  // Create jobs per existing people
+  String[][] listaLavori = new String[NUMLAV][6]; // ID, data inizio, data fine, dipendente, tipo lavoro, stipendio
+  for (int i = 0; i < dipendenti.length; ++i) {
+    listaLavori[i][0] = "";
+    listaLavori[i][1] = getData(i, dipendenti.length);
+    listaLavori[i][2] = "";
+    listaLavori[i][3] = dipendenti[i][2];
+    // Scelgi lavoro
+    listaLavori[i][4] = "";//lavoro?
+    listaLavori[i][5] = "";//stipendio?
+  }
+  // Aggiungi restanti lavori
+  for (int i = dipendenti.length; i < NUMLAV; ++i) {
+    listaLavori[i][0] = "";
+    // Pick from already made and disect
+    float x = random(1.0);
+    int pickLav = floor( (float)dipendenti.length * (1.0*pow(x, 3) - 0.78 *pow(x, 2) + 0.67*x + (float)3.0/dipendenti.length) );
+    // Set count of changes for dipendente but only if minor then mini count for dipa jobs
+    while (int(dipendenti[pickLav][4]) >= 2) {                      // Change minimax positions
+      x = random(1.0);
+      pickLav = floor( (float)dipendenti.length * (1.0*pow(x, 3) - 0.78 *pow(x, 2) + 0.67*x + (float)3.0/dipendenti.length) );
+    }
+    dipendenti[pickLav][4] = str(int(dipendenti[pickLav][4]) + 1);
+    // Add new job
+    listaLavori[i][1] = "";
+    listaLavori[i][2] = "";
+    listaLavori[i][3] = listaLavori[pickLav][3];
+    listaLavori[i][4] = "";//lavoro?
+    listaLavori[i][5] = "";//stipendio?
+  }
+  // Hardcode Proprietario dipa
+  dipendenti[0][5] = "4";
+  // Settaggio dipartimenti per dipendenti
+  int totalPerDipa = 719;
+  int[] persPerDipa = new int[9];          // Dipa var
+  arrayCopy(personePerDipartimenti,persPerDipa);
+  persPerDipa[3]--;
+  for (int i = 1; i < dipendenti.length; ++i) {
+    int _dipa = floor(random(totalPerDipa));
+    for (int j = 0; j < 9; ++j) {          // Dipa var
+      if (_dipa < persPerDipa[j]) {
+        dipendenti[i][5] = str(j+1);
+        totalPerDipa--;
+        persPerDipa[j]--;
+        break;
+      } else {
+        _dipa -= persPerDipa[j];
+      }
+    }
+  }
+  // Scegli tipo di lavoro e stipendio - scegli anche data di cambio posizioni
+  for (int i = 1; i < dipendenti.length; ++i) {
+    if (int(dipendenti[i][4]) > 0) {
+      // Find intial date
+      String strData = listaLavori[i][1];
+      // Calc dates + random
+      String[] dates = getDatesChange(strData, int(dipendenti[i][4]));
+      // Get dipar
+      int _dipeDipa = int(dipendenti[i][5]) - 1;
+      // Calc posizioni e stipendi
+      String[][] jobs = getJobs(_dipeDipa, int(dipendenti[i][4]) + 1);
+      // Put dates in following jobs
+      listaLavori[i][2] = dates[0];
+      listaLavori[i][4] = jobs[0][0];
+      listaLavori[i][5] = jobs[0][1];
+      int _jobDip = 0;
+      for (int k = dipendenti.length; k < NUMLAV; ++k) {
+        // Find next job of dipe
+        if (listaLavori[k][3] == dipendenti[i][2]) {
+          // Add date and jobs type
+          listaLavori[k][1] = dates[_jobDip];
+          if (_jobDip + 1 < int(dipendenti[i][4])) {
+            listaLavori[k][2] = dates[_jobDip+1];
+          } else {
+            listaLavori[k][2] = "";
+          }
+          listaLavori[k][4] = jobs[_jobDip+1][0];
+          listaLavori[k][5] = jobs[_jobDip+1][1];
+          _jobDip++;
+        }
+      }
+    } else { // Assegna tipi lavori unici
+      // Get dipar
+      int _dipeDipa = int(dipendenti[i][5]) - 1;
+      String[][] jobs = getJobs(_dipeDipa, 1);
+      listaLavori[i][4] = jobs[0][0];
+      listaLavori[i][5] = jobs[0][1];
+    }
+  }
+  
+  // Hardcode Proprietario
+  listaLavori[0][4] = "Proprietario";
+  listaLavori[0][5] = "3255";
+  // Sortaggio dei lavori
+  for (int i = 0; i < NUMLAV; ++i) {
+    for (int j = 1; j < NUMLAV; ++j) { // ID, data inizio, data fine, dipendente, tipo lavoro, stipendio
+      // Get data A & B
+      String datA = listaLavori[j-1][1];
+      String datB = listaLavori[j][1];
+      if (dataCompareAmajorB(datA, datB)) {
+        String _dipe = listaLavori[j-1][3];
+        String _datFin = listaLavori[j-1][2];
+        String _lav = listaLavori[j-1][4];
+        String _sti = listaLavori[j-1][5];
+        listaLavori[j-1][1] = datB;
+        listaLavori[j-1][2] = listaLavori[j][2];
+        listaLavori[j-1][3] = listaLavori[j][3];
+        listaLavori[j-1][4] = listaLavori[j][4];
+        listaLavori[j-1][5] = listaLavori[j][5];
+        listaLavori[j][1] = datA;
+        listaLavori[j][2] = _datFin;
+        listaLavori[j][3] = _dipe;
+        listaLavori[j][4] = _lav;
+        listaLavori[j][5] = _sti;
+      }
+    }
+  }
+  // Settaggio ID dei lavori
+  for (int i = 0; i < NUMLAV; ++i) {
+    listaLavori[i][0] = str(i+1);
+  }
+  // Aggiungi saltini per lavori
+  int saltiniLavori = 123;
+  for (int i = 0; i < saltiniLavori; ++i) { // 1.59  -0.9  0.28  3/720 - 1.25 -0.37 0.11  3/720
+    float x = random(1.0);
+    int saltino = floor( (float)NUMLAV * (1.25*pow(x, 3) - 0.37*pow(x, 2) + 0.11*x + (float)4.0/NUMLAV) );
+    for (int j = saltino; j < NUMLAV; ++j) {
+      listaLavori[j][0] = str(int(listaLavori[j][0]) + 1);
+    }
+  }
+  
+  // Assegna lavori attuali ai propri dipendenti
+  for (int i = 0; i < NUMLAV; ++i) {
+    String _idLav = listaLavori[i][0];
+    int _refDipe = int(listaLavori[i][3]);
+    for (int j = 0; j < dipendenti.length; ++j) {
+      if (int(dipendenti[j][2]) == _refDipe) {
+        dipendenti[j][6] = _idLav;
+      }
+    }
+  }
+  
+  println("ES LAV:");
+  printArray(listaLavori[11]);
+  
+  
+  // Create projects
+  IntList listaIDprogs = new IntList();
+  while (listaIDprogs.size() < totaleProgetti) {
+     int _rid = randint(248, 511); // Diff per progetti -> 511 - 248 > 162
+     if (!listaIDprogs.hasValue(_rid)) {
+       listaIDprogs.append(_rid);
+     }
+  }
+  //listaIDprogs.sort();
+  
+  String[][] listaProgetti = new String[totaleProgetti][4]; // ID, data fine stimata, budget, dipa
+  for (int i = 0; i < totaleProgetti; ++i) {
+    listaProgetti[i][0] = str(listaIDprogs.get(i));
+    listaProgetti[i][1] = getDataFineStimata();
+  }
+  
+  // Trova budget per progetto per dipartimento
+  int[][] budgetDips = new int[9][];
+  for (int i = 0; i < 9; ++i) {              // Dipa var
+    budgetDips[i] = new int[progettiPerDipartimenti[i]];
+    int totBudDip = budgetPerDipartimenti[i] - budgetRimPerDipartimenti[i];
+    for (int j = 0; j < progettiPerDipartimenti[i]; ++j) {
+      int div = randint(totBudDip/round(progettiPerDipartimenti[i]*1.2), totBudDip/round(progettiPerDipartimenti[i]*0.8));         // Budget division
+      budgetDips[i][j] = div;
+      totBudDip -= div;
+    }
+  }
+  
+  // Copy budget to progetti
+  int _indBud = 0;
+  for (int i = 0; i < 9; ++i) {           // Dipa var
+    for (int j = 0; j < progettiPerDipartimenti[i]; ++j) {
+      listaProgetti[_indBud + j][2] = str(budgetDips[i][j]);
+      listaProgetti[_indBud + j][3] = str(i+1);
+    }
+    _indBud += progettiPerDipartimenti[i];
+  }
+  
+  // Finally sort progetti
+  for (int i = 0; i < totaleProgetti; ++i) {
+    for (int j = 1; j < totaleProgetti; ++j) {
+      // Get data A & B
+      if (int(listaProgetti[j-1][0]) > int(listaProgetti[j][0])) {
+        String _id = listaProgetti[j-1][0];
+        String _dat = listaProgetti[j-1][1];
+        String _bud = listaProgetti[j-1][2];
+        String _dipe = listaProgetti[j-1][3];
+        listaProgetti[j-1][0] = listaProgetti[j][0];
+        listaProgetti[j-1][1] = listaProgetti[j][1];
+        listaProgetti[j-1][2] = listaProgetti[j][2];
+        listaProgetti[j-1][3] = listaProgetti[j][3];
+        listaProgetti[j][0] = _id;
+        listaProgetti[j][1] = _dat;
+        listaProgetti[j][2] = _bud;
+        listaProgetti[j][3] = _dipe;
+      }
+    }
+  }
+  println("ES PROG:");
+  printArray(listaProgetti[1]);
+  
+  // Associa responsabili a dipartimenti
+  for (int i = 0; i < 9; ++i) {
+    if (i != 3) {
+      // Search top-N jobs from dipartimenti
+      int jobPick = 1;
+      boolean found = false;
+      while (!found) {
+        for (int j = 1; j < listaLavori.length; ++j) {
+          // Se lavoro = top carica && dataFine == NULL
+          if (listaLavori[j][4].equals(tabellaLavoriPerDipartimenti[i][tabellaLavoriPerDipartimenti[i].length-jobPick]) && listaLavori[j][2].length() == 0) { // .equals("")
+            // Search dipe from lavoro dipe ref
+            for (int k = 1; k < dipendenti.length; ++k) {
+              // Se id dipe == dipe ref of lavoro
+              if (int(dipendenti[k][2]) == int(listaLavori[j][3])) {
+                respPerDipartimenti[i] = dipendenti[k][2];
+                found = true;
+                break;
+              }
+            }
+            break;
+          }
+        }
+        jobPick++;
+        if (jobPick > 3) {
+          int a = 1/(1-1);
+        }
+      }
+    }
+  }
+  
+  // Associa dipendenti a progetti
+  for (int i = 0; i < dipendenti.length; ++i) {
+    int _dipeDipa = int(dipendenti[i][5]) - 1;
+    int _randPro = floor(random(progettiPerDipartimenti[_dipeDipa]));
+    int _countPro = 0;
+    for (int j = 0; j < totaleProgetti; ++j) {
+      if (int(listaProgetti[j][3]) - 1 == _dipeDipa) {
+        if (_randPro == _countPro) {
+          dipendenti[i][7] = listaProgetti[j][0];
+        }
+        _countPro++;
+      }
+    }
+  }
+  
+  // Crea lista uffici
+  String[][][] listaUffici = new String[9][][]; // Dipa var
+  int _countUff = 2;
+  for (int i = 0; i < 9; ++i) {
+    listaUffici[i] = new String[ufficiPerDipartimenti[i]][2];
+    // Genera piano e id per ufficio
+    if (i == 3) {
+      for (int j = 0; j < ufficiPerDipartimenti[i]-1; ++j) {
+        int _piano = max(1, pianiPerDipartimenti[i] - floor(random(2)));
+        String _idUff = str(_piano) + nf(_countUff, 2);
+        listaUffici[i][j][0] = _idUff;
+        listaUffici[i][j][1] = str(_piano);
+        _countUff++;
+      }
+      listaUffici[i][ufficiPerDipartimenti[i]-1][0] = "501";
+      listaUffici[i][ufficiPerDipartimenti[i]-1][1] = "5";
+    } else {
+      for (int j = 0; j < ufficiPerDipartimenti[i]; ++j) {
+        int _piano = max(1, pianiPerDipartimenti[i] - floor(random(2)));
+        String _idUff = str(_piano) + nf(_countUff, 2);
+        listaUffici[i][j][0] = _idUff;
+        listaUffici[i][j][1] = str(_piano);
+        _countUff++;
+      }
+    }
+  }
+  println("UFF");
+  printArray(listaUffici[3][2]);
+  
+  // Associa dipendenti a uffici
+  //   Stessa cosa di budget
+  for (int i = 1; i < dipendenti.length; ++i) {
+    int _dipeDipa = int(dipendenti[i][5]) - 1;
+    int _randUff;
+    if (_dipeDipa == 3) {
+      _randUff = floor(random(ufficiPerDipartimenti[_dipeDipa]-1));
+    } else {
+      _randUff = floor(random(ufficiPerDipartimenti[_dipeDipa]));
+    }
+    // Assegna uff a dipe
+    dipendenti[i][8] = listaUffici[_dipeDipa][_randUff][0];
+  }
+  // Assegna uff a Proprietario
+  dipendenti[0][8] = "501";
+  
+  println("ES DIPE:");
+  printArray(dipendenti[0]);
+  
+  // GENERA TABLES
+  Table DIPENDENTE = new Table();
+  DIPENDENTE.addColumn("codice_dipendente");
+  DIPENDENTE.addColumn("nome");
+  DIPENDENTE.addColumn("cognome");
+  DIPENDENTE.addColumn("telefono");
+  DIPENDENTE.addColumn("dipartimento");
+  DIPENDENTE.addColumn("progetto");
+  DIPENDENTE.addColumn("lavoro");
+  DIPENDENTE.addColumn("ufficio");
+  
+  for (int i = 0; i < dipendenti.length; ++i) {                                                      // Nome, Cognome, ID, Telefono, numero cambio posizioni, dipa, lavoro, proge, ufficio
+    TableRow newRow = DIPENDENTE.addRow();
+    newRow.setString("codice_dipendente", dipendenti[i][2]);
+    newRow.setString("nome", "'" + dipendenti[i][0] + "'");
+    newRow.setString("cognome", "'" + dipendenti[i][1] + "'");
+    newRow.setString("telefono","'" +  dipendenti[i][3] + "'");
+    newRow.setString("dipartimento", dipendenti[i][5]);
+    newRow.setString("progetto", dipendenti[i][7]);
+    newRow.setString("lavoro", dipendenti[i][6]);
+    newRow.setString("ufficio", dipendenti[i][8]);
+  }
+  
+  Table DIPARTIMENTO = new Table();
+  DIPARTIMENTO.addColumn("numero_dipartimento");
+  DIPARTIMENTO.addColumn("nome");
+  DIPARTIMENTO.addColumn("budget");
+  DIPARTIMENTO.addColumn("budget_rimanente");
+  DIPARTIMENTO.addColumn("responsabile");
+  
+  for (int i = 0; i < 9; ++i) {
+    TableRow newRow = DIPARTIMENTO.addRow();
+    newRow.setString("numero_dipartimento", str(i + 1));
+    newRow.setString("nome", "'" + dipartimenti[i] + "'");
+    newRow.setString("budget", str(budgetPerDipartimenti[i]));
+    newRow.setString("budget_rimanente", str(budgetRimPerDipartimenti[i]));
+    newRow.setString("responsabile", respPerDipartimenti[i]);
+  }
+  
+  Table LAVORO = new Table();
+  LAVORO.addColumn("id");
+  LAVORO.addColumn("data_inizio");
+  LAVORO.addColumn("data_fine");
+  LAVORO.addColumn("tipo_lavoro");
+  LAVORO.addColumn("stipendio_lavoro");
+  LAVORO.addColumn("impiegato");
+  
+  for (int i = 0; i < listaLavori.length; ++i) {                                     // ID, data inizio, data fine, dipendente, tipo lavoro, stipendio
+    TableRow newRow = LAVORO.addRow();
+    newRow.setString("id", listaLavori[i][0]);
+    newRow.setString("data_inizio", "'" + listaLavori[i][1] + "'");
+    if (listaLavori[i][2].equals("NULL")) {
+      newRow.setString("data_fine", "");
+    } else {
+      newRow.setString("data_fine", "'" + listaLavori[i][2] + "'");
+    }
+    newRow.setString("tipo_lavoro", "'" + listaLavori[i][4] + "'");
+    newRow.setString("stipendio_lavoro", listaLavori[i][5]);
+    newRow.setString("impiegato", listaLavori[i][3]);
+  }
+  
+  Table PROGETTO = new Table();
+  PROGETTO.addColumn("numero_progetto");
+  PROGETTO.addColumn("data_fine_stimata");
+  PROGETTO.addColumn("budget");
+  PROGETTO.addColumn("dipartimento");
+  
+  for (int i = 0; i < totaleProgetti; ++i) {                                                  // ID, data fine stimata, budget, dipa
+    TableRow newRow = PROGETTO.addRow();
+    newRow.setString("numero_progetto", listaProgetti[i][0]);
+    newRow.setString("data_fine_stimata", "'" + listaProgetti[i][1] + "'");
+    newRow.setString("budget", listaProgetti[i][2]);
+    newRow.setString("dipartimento", listaProgetti[i][3]);
+  }
+  
+  Table UFFICIO = new Table();
+  UFFICIO.addColumn("numero_ufficio");
+  UFFICIO.addColumn("dipartimento");
+  UFFICIO.addColumn("piano");
+  
+  for (int i = 0; i < dipartimenti.length; ++i) {
+    for (int j = 0; j < ufficiPerDipartimenti[i]; ++j) {
+      TableRow newRow = UFFICIO.addRow();
+      newRow.setString("numero_ufficio", listaUffici[i][j][0]);
+      newRow.setString("dipartimento", str(i + 1));
+      newRow.setString("piano", listaUffici[i][j][1]);
+    }
+  }
+  
+  if (SAVING) {
+    saveTable(DIPENDENTE, prePath + "dipendente.csv");
+    saveTable(DIPARTIMENTO, prePath + "dipartimento.csv");
+    saveTable(LAVORO, prePath + "lavoro.csv");
+    saveTable(PROGETTO, prePath + "progetto.csv");
+    saveTable(UFFICIO, prePath + "ufficio.csv");
+  }
+  
+  // VERSIONE SENZA APOSTROFI ##################################################################################################################################################
+  
+  Table DIPENDENTE2 = new Table();
+  DIPENDENTE2.addColumn("codice_dipendente");
+  DIPENDENTE2.addColumn("nome");
+  DIPENDENTE2.addColumn("cognome");
+  DIPENDENTE2.addColumn("telefono");
+  DIPENDENTE2.addColumn("dipartimento");
+  DIPENDENTE2.addColumn("progetto");
+  DIPENDENTE2.addColumn("lavoro");
+  DIPENDENTE2.addColumn("ufficio");
+  
+  for (int i = 0; i < dipendenti.length; ++i) { // Nome, Cognome, ID, Telefono, numero cambio posizioni, dipa, lavoro, proge, ufficio
+    TableRow newRow = DIPENDENTE2.addRow();
+    newRow.setString("codice_dipendente", dipendenti[i][2]);
+    newRow.setString("nome", dipendenti[i][0]);
+    newRow.setString("cognome", dipendenti[i][1]);
+    newRow.setString("telefono", dipendenti[i][3]);
+    newRow.setString("dipartimento", dipendenti[i][5]);
+    newRow.setString("progetto", dipendenti[i][7]);
+    newRow.setString("lavoro", dipendenti[i][6]);
+    newRow.setString("ufficio", dipendenti[i][8]);
+  }
+  
+  Table DIPARTIMENTO2 = new Table();
+  DIPARTIMENTO2.addColumn("numero_dipartimento");
+  DIPARTIMENTO2.addColumn("nome");
+  DIPARTIMENTO2.addColumn("budget");
+  DIPARTIMENTO2.addColumn("budget_rimanente");
+  DIPARTIMENTO2.addColumn("responsabile");
+  
+  for (int i = 0; i < 9; ++i) {
+    TableRow newRow = DIPARTIMENTO2.addRow();
+    newRow.setString("numero_dipartimento", str(i + 1));
+    newRow.setString("nome", dipartimenti[i]);
+    newRow.setString("budget", str(budgetPerDipartimenti[i]));
+    newRow.setString("budget_rimanente", str(budgetRimPerDipartimenti[i]));
+    newRow.setString("responsabile", respPerDipartimenti[i]);
+  }
+  
+  Table LAVORO2 = new Table();
+  LAVORO2.addColumn("id");
+  LAVORO2.addColumn("data_inizio");
+  LAVORO2.addColumn("data_fine");
+  LAVORO2.addColumn("tipo_lavoro");
+  LAVORO2.addColumn("stipendio_lavoro");
+  LAVORO2.addColumn("impiegato");
+  
+  for (int i = 0; i < listaLavori.length; ++i) { // ID, data inizio, data fine, dipendente, tipo lavoro, stipendio
+    TableRow newRow = LAVORO2.addRow();
+    newRow.setString("id", listaLavori[i][0]);
+    newRow.setString("data_inizio", listaLavori[i][1] );
+    if (listaLavori[i][2].equals("NULL")) {
+      newRow.setString("data_fine", "");
+    } else {
+      newRow.setString("data_fine", "'" + listaLavori[i][2] + "'");
+    }
+    newRow.setString("tipo_lavoro", listaLavori[i][4] );
+    newRow.setString("stipendio_lavoro", listaLavori[i][5]);
+    newRow.setString("impiegato", listaLavori[i][3]);
+  }
+  
+  Table PROGETTO2 = new Table();
+  PROGETTO2.addColumn("numero_progetto");
+  PROGETTO2.addColumn("data_fine_stimata");
+  PROGETTO2.addColumn("budget");
+  PROGETTO2.addColumn("dipartimento");
+  
+  for (int i = 0; i < totaleProgetti; ++i) { // ID, data fine stimata, budget, dipa
+    TableRow newRow = PROGETTO2.addRow();
+    newRow.setString("numero_progetto", listaProgetti[i][0]);
+    newRow.setString("data_fine_stimata", listaProgetti[i][1]);
+    newRow.setString("budget", listaProgetti[i][2]);
+    newRow.setString("dipartimento", listaProgetti[i][3]);
+  }
+  
+  Table UFFICIO2 = new Table();
+  UFFICIO2.addColumn("numero_ufficio");
+  UFFICIO2.addColumn("dipartimento");
+  UFFICIO2.addColumn("piano");
+  
+  for (int i = 0; i < dipartimenti.length; ++i) {
+    for (int j = 0; j < ufficiPerDipartimenti[i]; ++j) {
+      TableRow newRow = UFFICIO2.addRow();
+      newRow.setString("numero_ufficio", listaUffici[i][j][0]);
+      newRow.setString("dipartimento", str(i + 1));
+      newRow.setString("piano", listaUffici[i][j][1]);
+    }
+  }
+  
+  if (SAVING) {
+    saveTable(DIPENDENTE2, prePath2 + "dipendente.csv");
+    saveTable(DIPARTIMENTO2, prePath2 + "dipartimento.csv");
+    saveTable(LAVORO2, prePath2 + "lavoro.csv");
+    saveTable(PROGETTO2, prePath2 + "progetto.csv");
+    saveTable(UFFICIO2, prePath2 + "ufficio.csv");
+  }
+  
+  println("TESTING"); // #############################################################################################################################################
+  
+  
+  // DIPENDENTI
+  // LAVORO
+  
+  
+  
+  println("FINISHED");
+}
+
+
+
+String[][] getJobs(int _dipeDipa, int _numJobs) {
+  // Jobs in growing order
+  String[][] _jos = new String[_numJobs][2];
+  int[] _countJo = new int[tabellaLavoriPerDipartimenti[_dipeDipa].length];
+  for (int i = 0; i < _countJo.length; ++i) {
+    _countJo[i] = 0;
+  }
+  while (sum(_countJo) < _numJobs) {
+    int _jo = randint(0, tabellaLavoriPerDipartimenti[_dipeDipa].length - 1); 
+    if (_countJo[_jo] == 0) {
+      _countJo[_jo]++;
+    }
+  }
+  int _ind = 0;
+  for (int i = 0; i < _countJo.length; ++i) {
+    if (_countJo[i] > 0) {
+      _jos[_ind][0] = tabellaLavoriPerDipartimenti[_dipeDipa][i];
+      _jos[_ind][1] = str(stipendiTipoTabellaLavori[_dipeDipa][i]*1.5 + randint(0, 100) - 50);
+      _ind++;
+    }
+  }
+  return _jos;
+}
+
+int sum(int[] arr) {
+  int count = 0;
+  for (int i = 0; i < arr.length; ++i) {
+    count += arr[i];
+  }
+  return count;
+}
+
+String[] getDatesChange(String _strData, int changes) {
+  String[] datChs = new String[changes];
+  int _ye = int(_strData.substring(0,4));
+  int _mo = int(_strData.substring(5,7));
+  int _da = int(_strData.substring(8));
+  for (int i = 0; i < changes; ++i) {
+    int _yea = 2020;
+    int _mon = 6;
+    int _day = 15;
+    // Pick year
+    _yea = round((float)_ye + (year() - _ye) * (float)(i+1)/(changes+1));
+    // Pick mon
+    if (_yea > _ye && _yea < year()) {
+      _mon = floor(random(12)) + 1;
+      _day = floor(random(31)) + 1;
+      if (_mon == 2) _day = min(28, _day); 
+      if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+    } else if (_yea == _ye && _yea < year()) {
+      _mon = randint(_mo, 12);
+      if (_mon == month()) {
+        _day = randint(_da, 31);
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      } else {
+        _day = floor(random(31)) + 1;
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      }
+    } else if (_yea > _ye && _yea == year()) {
+      _mon = randint(1, month());
+      if (_mon == month()) {
+        _day = randint(1, day());
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      } else {
+        _day = floor(random(31)) + 1;
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      }
+    } else if (_yea == _ye && _yea == year()) {
+      _mon = randint(_mo, 12);
+      if (_mon == _mo && _mon < month()) {
+        _day = randint(_da, 31);
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      } else if (_mon > _mo && _mon == month()) {
+        _day = randint(1, day());
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      } else if (_mon > _mo && _mon < month()) {
+        _day = randint(_da, 31);
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      } else if (_mon == _mo && _mon == month()) {
+        _day = randint(_da, day());
+        if (_mon == 2) _day = min(28, _day); 
+        if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+      }
+    } else {
+      int a = 1/(1-1); // Error
+    }
+    datChs[i] = nf(_yea, 4) + "-" + nf(_mon, 2) + "-" + nf(_day,2);
+  }
+  // Reorder dates
+  for (int i = 0; i < changes; ++i) {
+    for (int j = 1; j < changes; ++j) {
+      // Get data A & B
+      String datA = datChs[j-1];
+      String datB = datChs[j];
+      if (dataCompareAmajorB(datA, datB)) {
+        datChs[j-1] = datB;
+        datChs[j] = datA;
+      }
+    }
+  }
+  return datChs;
+}
+
+int randint(int A, int B) {
+  return round(random(B - A)) + A;
+}
+
+boolean dataCompareAmajorB(String _datA, String _datB) {
+  if (int(_datA.substring(0,4)) > int(_datB.substring(0,4))) {
+    return true;
+  } else if (int(_datA.substring(0,4)) < int(_datB.substring(0,4))) {
+    return false;
+  } else if (int(_datA.substring(5,7)) > int(_datB.substring(5,7))) {
+    return true;
+  } else if (int(_datA.substring(5,7)) < int(_datB.substring(5,7))) {
+    return false;
+  } else if (int(_datA.substring(8)) > int(_datB.substring(8))) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+String getDataFineStimata() {
+  int _yea = year() + floor(sq(random(1)) * 3);
+  int _mon = floor(random(12)) + 1;
+  if (_yea == year()) _mon = max(month(), _mon);
+  int _day = floor(random(31)) + 1;
+  if (_yea == year() && _mon == month()) _day = max(day(), _day);
+  if (_mon == 2) _day = min(28, _day);                   
+  if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11) _day = min(30, _day);
+  return nf(_yea, 4) + "-" + nf(_mon, 2) + "-" + nf(_day,2);
+}
+
+String getData(int _ind, int _siz) {
+  int _yea = year() - 15 + floor(pow((float)_ind/_siz, 0.4) * 15);
+  int _mon = floor(random(12)) + 1;
+  if (_yea == year()) _mon = min(month(), _mon);
+  int _day = floor(random(31)) + 1;
+  if (_yea == year() && _mon == month()) _day = min(day(), _day);
+  if (_mon == 2) _day = min(28, _day);                    
+  if (_mon == 4 || _mon == 6 || _mon == 9 || _mon == 11 || _mon == 12) _day = min(30, _day); // Never 31st Dec
+  if (_mon == 1) _day = max(2, _day);                                                        // Never 1st Jan
+  return nf(_yea, 4) + "-" + nf(_mon, 2) + "-" + nf(_day,2);
+}
+
+  
